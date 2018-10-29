@@ -138,6 +138,8 @@ inline void Environment::AsyncHooks::push_async_ids(double async_id,
   fields_[kStackLength] += 1;
   async_id_fields_[kExecutionAsyncId] = async_id;
   async_id_fields_[kTriggerAsyncId] = trigger_async_id;
+
+  env()->isolate()->SetCurrentExecutionAsyncId(async_id);
 }
 
 // Remember to keep this code aligned with popAsyncIds() in JS.
@@ -169,6 +171,8 @@ inline bool Environment::AsyncHooks::pop_async_id(double async_id) {
   async_id_fields_[kExecutionAsyncId] = async_ids_stack_[2 * offset];
   async_id_fields_[kTriggerAsyncId] = async_ids_stack_[2 * offset + 1];
   fields_[kStackLength] = offset;
+
+  env()->isolate()->SetCurrentExecutionAsyncId(async_id_fields_[kExecutionAsyncId]);
 
   return fields_[kStackLength] > 0;
 }

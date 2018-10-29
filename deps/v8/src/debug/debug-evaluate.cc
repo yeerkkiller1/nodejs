@@ -792,6 +792,7 @@ DebugInfo::SideEffectState BuiltinGetSideEffectState(Builtins::Name id) {
     case Builtins::kGlobalUnescape:
     case Builtins::kGlobalIsFinite:
     case Builtins::kGlobalIsNaN:
+    case Builtins::kGlobalDebugAwait:
     // Function builtins.
     case Builtins::kFunctionPrototypeToString:
     case Builtins::kFunctionPrototypeBind:

@@ -1127,6 +1127,15 @@ MaybeHandle<Object> ErrorUtils::Construct(
                         Object);
   }
 
+  int executionAsyncId = -1;
+  executionAsyncId = isolate->executionAsyncId;
+  Handle<Object> asyncValue = isolate->factory()->NewNumber(executionAsyncId);
+  Handle<String> asyncKey = isolate->factory()->InternalizeUtf8String("executionAsyncId");
+  RETURN_ON_EXCEPTION(isolate, JSObject::SetOwnPropertyIgnoreAttributes(
+                                    err, asyncKey,
+                                    asyncValue, DONT_ENUM),
+                      Object);
+
   // Optionally capture a more detailed stack trace for the message.
   if (!suppress_detailed_trace) {
     RETURN_ON_EXCEPTION(isolate, isolate->CaptureAndSetDetailedStackTrace(err),

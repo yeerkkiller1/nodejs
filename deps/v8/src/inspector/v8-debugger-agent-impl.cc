@@ -734,6 +734,7 @@ Response V8DebuggerAgentImpl::getStackTrace(
   }
   *outStackTrace = stack->buildInspectorObject(
       m_debugger, m_debugger->maxAsyncCallChainDepth());
+
   return Response::OK();
 }
 

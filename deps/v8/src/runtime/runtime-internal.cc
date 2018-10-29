@@ -4,7 +4,10 @@
 
 #include <memory>
 
+#include "stdint.h"
 #include "src/api.h"
+#include "src/api-inl.h"
+
 #include "src/arguments-inl.h"
 #include "src/ast/prettyprinter.h"
 #include "src/bootstrapper.h"
@@ -20,8 +23,201 @@
 #include "src/runtime/runtime-utils.h"
 #include "src/snapshot/snapshot.h"
 
+#include "src/inspector/v8-stack-trace-impl.h"
+#include "src/inspector/v8-inspector-impl.h"
+#include "src/inspector/v8-debugger.h"
+#include "src/inspector/v8-console.h"
+
+#include "src/builtins/builtins-utils.h"
+#include "src/builtins/builtins.h"
+#include "src/uri.h"
+
+#include "src/json-parser.h"
+#include "src/runtime/await-debug.h"
+#include "src/env.h"
+#include "src/compiler/node.h"
+#include "src/objects/js-promise-inl.h"
+
+
+IsolateString::IsolateString(const v8_inspector::StringView& text) {
+  this->is8Bit = text.is8Bit();
+  this->length = text.length();
+  if(this->is8Bit) {
+      data8 = v8::internal::NewArray<uint8_t>(this->length);
+      memcpy(data8, text.characters8(), sizeof(uint8_t) * this->length);
+  } else {
+      data16 = v8::internal::NewArray<uint16_t>(this->length);
+      memcpy(data16, text.characters16(), sizeof(uint16_t) * this->length);
+  }
+}
+IsolateString::~IsolateString() {
+  if(data8 != nullptr) {
+    v8::internal::DeleteArray(data8);
+    data8 = nullptr;
+  }
+  if(data16 != nullptr) {
+    v8::internal::DeleteArray(data16);
+    data16 = nullptr;
+  }
+}
+AwaitInfo::AwaitInfo(
+  size_t generatorId,
+  const std::unique_ptr<v8_inspector::V8StackTraceImpl>& stack,
+  int asyncExecutionId
+) :
+  generatorId(generatorId),
+  //inspectorObject(stack->buildInspectorObjectImpl(nullptr)->serialize()),
+  asyncExecutionId(asyncExecutionId)
+{ }
+
+
 namespace v8 {
 namespace internal {
+
+#define STR(c_str) factory->InternalizeUtf8String(c_str)
+#define NUM(num) factory->NewNumber(num, NOT_TENURED)
+
+#define SET(object, key, object_value) \
+do { \
+  JSObject::DefinePropertyOrElementIgnoreAttributes( \
+    object, \
+    factory->InternalizeUtf8String(key), \
+    object_value \
+  ).Check(); \
+} while(false)
+
+#define NEW_OBJECT() factory->NewJSObject(Handle<JSFunction>(isolate->native_context()->object_function(), isolate), NOT_TENURED)
+
+Handle<String> strViewToString(Factory* factory, IsolateString& text) {
+  return (text.is8Bit
+    ? factory->NewStringFromOneByte(Vector<uint8_t>(text.data8, text.length))
+    : factory->NewStringFromTwoByte(Vector<uint16_t>(text.data16, text.length))
+  ).ToHandleChecked();
+}
+
+BUILTIN(GlobalDebugAwait) {
+	HandleScope scope(isolate);
+  //std::vector<int>& testNums = isolate->testNums;
+
+  // todonext
+  // Welp, console.logging isn't working. But screw it, if we can create and return objects like JSON.parse does,
+  //  then we can just collect real values and return real objects, and then when it works we will actually be done.
+  // C:\nodejs\node\deps\v8\src\json-parser.cc:367
+
+  Factory* factory = isolate->factory();
+
+  /*
+  auto json_object = NEW_OBJECT();
+  SET(json_object, "key", STR("value"));
+  SET(json_object, "key2", STR("value2"));
+
+  auto json_object_inside = NEW_OBJECT();
+  SET(json_object, "object", json_object_inside);
+  SET(json_object_inside, "inside_key", STR("inside_value"));
+
+  SET(json_object, "num", NUM(5));
+
+
+  SET(json_object, "size", NUM(pendingAwaitsSize));
+  SET(json_object, "array", json_array);
+  */
+
+  //todonext
+  // Oh, it fails even without adding to pendingAwaits. So... maybe it is a problem with JSON stringifying.
+  Handle<JSArray> json_array = factory->NewJSArray(0);
+
+  /*
+  std::vector<AwaitInfo>& pendingAwaits = isolate->pendingAwaits;
+  size_t pendingAwaitsSize = pendingAwaits.size();
+  */
+  //*
+  //for(int i = 0; i < pendingAwaitsSize; i++) {
+    //AwaitInfo& pending = pendingAwaits[i];
+    //auto object = NEW_OBJECT();
+
+    //try {
+      /*
+      IsolateString& text = pending.inspectorObject;
+      Handle<String> rawJson = (text.is8Bit
+        ? factory->NewStringFromOneByte(Vector<uint8_t>(text.data8, text.length))
+        : factory->NewStringFromTwoByte(Vector<uint16_t>(text.data16, text.length / 2))
+      ).ToHandleChecked();
+
+      Handle<Object> parsedObject = JsonParser<false>::Parse(isolate, rawJson, factory->undefined_value()).ToHandleChecked();
+      SET(object, "inspectorObject", parsedObject);
+      */
+    /*
+    } catch(...) {
+      SET(object, "error", NUM(1));
+    }
+    */
+    
+    //SET(object, "generatorId", NUM(pending.generatorId));
+    //SET(object, "asyncExecutionId", NUM(pending.asyncExecutionId));
+
+    //JSObject::AddDataElement(json_array, i, object, NONE);
+  //}
+  //*/
+
+  //testNums.push_back(0);
+	return *json_array;
+}
+
+#define THROW(message) isolate->Throw(*isolate->factory()->InternalizeUtf8String(message), nullptr)
+
+Object* DebugAwaitCheckpoint(Isolate* isolate, int order, Object* generator, JSPromise* promise = nullptr) {
+  HandleScope scope(isolate);
+  size_t generatorId = (size_t)(void*)(generator);
+
+  std::vector<AwaitInfo>& pendingAwaits = isolate->pendingAwaits;
+  if(order == 1) {
+    for(int i = 0; i < pendingAwaits.size(); i++) {
+      if(pendingAwaits[i].generatorId == generatorId) {
+        pendingAwaits.erase(pendingAwaits.begin() + i);
+        return nullptr;
+      }
+    }
+    return THROW("Await resumed that we have no record of waiting.");
+  }
+  for(int i = 0; i < pendingAwaits.size(); i++) {
+    if(pendingAwaits[i].generatorId == generatorId) {
+      return THROW("Awaiting generator twice?");
+    }
+  }
+
+  Factory* factory = isolate->factory();
+  auto inspector = ((v8_inspector::V8Console*)isolate->console_delegate())->m_inspector;
+  auto debugger = inspector->debugger();
+
+  //todonext
+  // We need all stack traces to contain the current execution async id (promiseExecutionStack[promiseExecutionStack.size() - 1], probably),
+  //  so we can build the full async stack.
+  //todonext
+  // I am seeing a lot of "AsyncStackTrace" code. Is that the type of stack trace we are getting?
+  //  And if not, how do we get that kind of stack trace. Also, what trace we we getting? We should
+  //  probably open up visual studio and step through this code.
+
+  auto stack = debugger->captureStackTrace(true);
+  
+
+  if(!stack) {
+    return THROW("Stack is undefined on await?");
+  }
+  if(stack->isEmpty()) {
+    return THROW("Stack is empty on await?");
+  }
+  
+  //isolate->pendingAwaits.push_back(AwaitInfo(generatorId, stack, isolate->executionAsyncId));
+  return nullptr;
+}
+
+RUNTIME_FUNCTION(Runtime_DebugAwaitStart) {
+  CONVERT_ARG_HANDLE_CHECKED(JSPromise, promise, 1);
+  return DebugAwaitCheckpoint(isolate, 0, args[0], *promise);
+}
+RUNTIME_FUNCTION(Runtime_DebugAwaitEnd) {
+  return DebugAwaitCheckpoint(isolate, 1, args[0]);
+}
 
 RUNTIME_FUNCTION(Runtime_CheckIsBootstrapping) {
   SealHandleScope shs(isolate);

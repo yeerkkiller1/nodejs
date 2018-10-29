@@ -32,6 +32,8 @@
 #include "src/runtime/runtime.h"
 #include "src/unicode.h"
 
+#include "src/runtime/await-debug.h"
+
 #ifdef V8_INTL_SUPPORT
 #include "unicode/uversion.h"  // Define U_ICU_NAMESPACE.
 // 'icu' does not work. Use U_ICU_NAMESPACE.
@@ -1417,6 +1419,8 @@ class Isolate : private HiddenFactory {
   void RunPromiseHook(PromiseHookType type, Handle<JSPromise> promise,
                       Handle<Object> parent);
 
+  void SetCurrentExecutionAsyncId(int executionAsyncId);
+
   void AddDetachedContext(Handle<Context> context);
   void CheckDetachedContextsAfterGC();
 
@@ -1646,8 +1650,9 @@ class Isolate : private HiddenFactory {
   void SetTerminationOnExternalTryCatch();
 
   void PromiseHookStateUpdated();
-  void RunPromiseHookForAsyncEventDelegate(PromiseHookType type,
-                                           Handle<JSPromise> promise);
+  void RunPromiseHookForAsyncEventDelegate(PromiseHookType type, Handle<JSPromise> promise);
+
+private:
 
   const char* RAILModeName(RAILMode rail_mode) const {
     switch (rail_mode) {
@@ -1877,6 +1882,10 @@ class Isolate : private HiddenFactory {
   friend class v8::Unlocker;
 
   DISALLOW_COPY_AND_ASSIGN(Isolate);
+  
+public:
+  std::vector<AwaitInfo> pendingAwaits;
+  int executionAsyncId = -1;
 };
 
 

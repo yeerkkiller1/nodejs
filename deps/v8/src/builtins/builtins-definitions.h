@@ -618,6 +618,7 @@ namespace internal {
   CPP(GlobalEscape)                                                            \
   CPP(GlobalUnescape)                                                          \
   CPP(GlobalEval)                                                              \
+  CPP(GlobalDebugAwait)                                                        \
   /* ES6 #sec-isfinite-number */                                               \
   TFJ(GlobalIsFinite, 1, kReceiver, kNumber)                                   \
   /* ES6 #sec-isnan-number */                                                  \

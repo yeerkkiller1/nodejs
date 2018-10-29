@@ -53,6 +53,8 @@ void AsyncFunctionBuiltinsAssembler::AsyncFunctionAwaitResumeClosure(
       LoadContextElement(context, AwaitContext::kGeneratorSlot);
   CSA_SLOW_ASSERT(this, HasInstanceType(generator, JS_GENERATOR_OBJECT_TYPE));
 
+  CallRuntime(Runtime::kDebugAwaitEnd, context, generator);
+
   // Inline version of GeneratorPrototypeNext / GeneratorPrototypeReturn with
   // unnecessary runtime checks removed.
   // TODO(jgruber): Refactor to reuse code from builtins-generator.cc.
@@ -113,6 +115,8 @@ void AsyncFunctionBuiltinsAssembler::AsyncFunctionAwait(
   CSA_SLOW_ASSERT(this, HasInstanceType(generator, JS_GENERATOR_OBJECT_TYPE));
   CSA_SLOW_ASSERT(this, HasInstanceType(outer_promise, JS_PROMISE_TYPE));
 
+  CallRuntime(Runtime::kDebugAwaitStart, context, generator, outer_promise);
+
   ContextInitializer init_closure_context = [&](Node* context) {
     StoreContextElementNoWriteBarrier(context, AwaitContext::kGeneratorSlot,
                                       generator);
@@ -149,6 +153,8 @@ void AsyncFunctionBuiltinsAssembler::AsyncFunctionAwaitOptimized(
     Node* const outer_promise, const bool is_predicted_as_caught) {
   CSA_SLOW_ASSERT(this, HasInstanceType(generator, JS_GENERATOR_OBJECT_TYPE));
   CSA_SLOW_ASSERT(this, HasInstanceType(outer_promise, JS_PROMISE_TYPE));
+
+  CallRuntime(Runtime::kDebugAwaitStart, context, generator);
 
   ContextInitializer init_closure_context = [&](Node* context) {
     StoreContextElementNoWriteBarrier(context, AwaitContext::kGeneratorSlot,

@@ -95,7 +95,7 @@ class String16 {
   template <typename... T>
   static String16 concat(T... args);
 
- private:
+ public:
   std::basic_string<UChar> m_impl;
   mutable std::size_t hash_code = 0;
 };

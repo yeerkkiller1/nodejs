@@ -261,6 +261,8 @@ namespace internal {
   F(RunMicrotaskCallback, 2, 1)                                      \
   F(RunMicrotasks, 0, 1)                                             \
   F(StackGuard, 0, 1)                                                \
+  F(DebugAwaitStart, 2, 1)                                           \
+  F(DebugAwaitEnd, 1, 1)                                             \
   F(Throw, 1, 1)                                                     \
   F(ThrowApplyNonFunction, 1, 1)                                     \
   F(ThrowCalledNonCallable, 1, 1)                                    \

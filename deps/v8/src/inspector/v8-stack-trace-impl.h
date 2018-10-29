@@ -37,7 +37,7 @@ class StackFrame {
       V8InspectorClient* client) const;
   bool isEqual(StackFrame* frame) const;
 
- private:
+ //private:
   String16 m_functionName;
   String16 m_scriptId;
   String16 m_sourceURL;

@@ -8583,6 +8583,10 @@ void Isolate::SetPromiseHook(PromiseHook hook) {
   i::Isolate* isolate = reinterpret_cast<i::Isolate*>(this);
   isolate->SetPromiseHook(hook);
 }
+void Isolate::SetCurrentExecutionAsyncId(int executionAsyncId) {
+  i::Isolate* isolate = reinterpret_cast<i::Isolate*>(this);
+  isolate->SetCurrentExecutionAsyncId(executionAsyncId);
+}
 
 void Isolate::SetPromiseRejectCallback(PromiseRejectCallback callback) {
   if (callback == nullptr) return;

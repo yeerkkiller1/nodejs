@@ -1645,6 +1645,8 @@ Type Typer::Visitor::JSCallTyper(Type fun, Typer* t) {
     case BuiltinFunctionId::kGlobalIsFinite:
     case BuiltinFunctionId::kGlobalIsNaN:
       return Type::Boolean();
+    case BuiltinFunctionId::kGlobalDebugAwait:
+      return Type::OtherObject();
 
     // Map functions.
     case BuiltinFunctionId::kMapClear:

@@ -3106,6 +3106,7 @@ enum class BuiltinFunctionId : uint8_t {
   kGlobalDecodeURIComponent,
   kGlobalEncodeURI,
   kGlobalEncodeURIComponent,
+  kGlobalDebugAwait,
   kGlobalEscape,
   kGlobalUnescape,
   kGlobalIsFinite,

@@ -66,6 +66,11 @@
 #include "unicode/regex.h"
 #endif  // V8_INTL_SUPPORT
 
+#include "src/inspector/v8-stack-trace-impl.h"
+#include "src/inspector/v8-inspector-impl.h"
+#include "src/inspector/v8-debugger.h"
+#include "src/inspector/v8-console.h"
+
 namespace v8 {
 namespace internal {
 
@@ -103,6 +108,7 @@ namespace {
 std::atomic<const uint8_t*> current_embedded_blob_(nullptr);
 std::atomic<uint32_t> current_embedded_blob_size_(0);
 }  // namespace
+
 
 void Isolate::SetEmbeddedBlob(const uint8_t* blob, uint32_t blob_size) {
   embedded_blob_ = blob;
@@ -674,6 +680,7 @@ MaybeHandle<JSReceiver> Isolate::CaptureAndSetSimpleStackTrace(
       JSReceiver::SetProperty(this, error_object, key, stack_trace,
                               LanguageMode::kStrict),
       JSReceiver);
+
   return error_object;
 }
 
@@ -3860,6 +3867,10 @@ void Isolate::RunPromiseHook(PromiseHookType type, Handle<JSPromise> promise,
   if (promise_hook_ == nullptr) return;
   promise_hook_(type, v8::Utils::PromiseToLocal(promise),
                 v8::Utils::ToLocal(parent));
+}
+
+void Isolate::SetCurrentExecutionAsyncId(int executionAsyncId) {
+  this->executionAsyncId = executionAsyncId;
 }
 
 void Isolate::RunPromiseHookForAsyncEventDelegate(PromiseHookType type,

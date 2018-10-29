@@ -3715,6 +3715,12 @@ void Genesis::InitializeGlobal(Handle<JSGlobalObject> global_object,
                              Builtins::kHandleApiCallAsConstructor, 0, false);
     native_context()->set_call_as_constructor_delegate(*delegate);
   }
+
+  {  // --- D E B U G
+    SimpleInstallFunction(isolate(), global_object, "DebugAwait",
+	    Builtins::kGlobalDebugAwait, 0, false,
+	    BuiltinFunctionId::kGlobalDebugAwait);
+  }
 }  // NOLINT(readability/fn_size)
 
 Handle<JSFunction> Genesis::InstallTypedArray(const char* name,

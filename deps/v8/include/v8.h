@@ -7983,6 +7983,8 @@ class V8_EXPORT Isolate {
    */
   void SetPromiseHook(PromiseHook hook);
 
+  void SetCurrentExecutionAsyncId(int executionAsyncId);
+
   /**
    * Set callback to notify about promise reject with no handler, or
    * revocation of such a previous notification once the handler is added.
