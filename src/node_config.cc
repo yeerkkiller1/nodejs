@@ -87,7 +87,7 @@ static void Initialize(Local<Object> target,
   if (env->options()->preserve_symlinks_main)
     READONLY_BOOLEAN_PROPERTY("preserveSymlinksMain");
 
-  if (env->options()->experimental_modules) {
+  if (env->options()->experimental_modules || true) {
     READONLY_BOOLEAN_PROPERTY("experimentalModules");
     const std::string& userland_loader = env->options()->userland_loader;
     if (!userland_loader.empty()) {

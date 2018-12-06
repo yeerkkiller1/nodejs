@@ -66,7 +66,7 @@ AwaitInfo::AwaitInfo(
   int asyncExecutionId
 ) :
   generatorId(generatorId),
-  //inspectorObject(stack->buildInspectorObjectImpl(nullptr)->serialize()),
+  inspectorObject(stack->buildInspectorObjectImpl(nullptr)->serialize()),
   asyncExecutionId(asyncExecutionId)
 { }
 
@@ -97,69 +97,25 @@ Handle<String> strViewToString(Factory* factory, IsolateString& text) {
 
 BUILTIN(GlobalDebugAwait) {
 	HandleScope scope(isolate);
-  //std::vector<int>& testNums = isolate->testNums;
-
-  // todonext
-  // Welp, console.logging isn't working. But screw it, if we can create and return objects like JSON.parse does,
-  //  then we can just collect real values and return real objects, and then when it works we will actually be done.
-  // C:\nodejs\node\deps\v8\src\json-parser.cc:367
-
   Factory* factory = isolate->factory();
-
-  /*
-  auto json_object = NEW_OBJECT();
-  SET(json_object, "key", STR("value"));
-  SET(json_object, "key2", STR("value2"));
-
-  auto json_object_inside = NEW_OBJECT();
-  SET(json_object, "object", json_object_inside);
-  SET(json_object_inside, "inside_key", STR("inside_value"));
-
-  SET(json_object, "num", NUM(5));
-
-
-  SET(json_object, "size", NUM(pendingAwaitsSize));
-  SET(json_object, "array", json_array);
-  */
-
-  //todonext
-  // Oh, it fails even without adding to pendingAwaits. So... maybe it is a problem with JSON stringifying.
   Handle<JSArray> json_array = factory->NewJSArray(0);
 
-  /*
   std::vector<AwaitInfo>& pendingAwaits = isolate->pendingAwaits;
   size_t pendingAwaitsSize = pendingAwaits.size();
-  */
-  //*
-  //for(int i = 0; i < pendingAwaitsSize; i++) {
-    //AwaitInfo& pending = pendingAwaits[i];
-    //auto object = NEW_OBJECT();
+  for(int i = 0; i < pendingAwaitsSize; i++) {
+    AwaitInfo& pending = pendingAwaits[i];
+    auto object = NEW_OBJECT();
 
-    //try {
-      /*
-      IsolateString& text = pending.inspectorObject;
-      Handle<String> rawJson = (text.is8Bit
-        ? factory->NewStringFromOneByte(Vector<uint8_t>(text.data8, text.length))
-        : factory->NewStringFromTwoByte(Vector<uint16_t>(text.data16, text.length / 2))
-      ).ToHandleChecked();
+    IsolateString& text = pending.inspectorObject;
+    Handle<String> rawJson = strViewToString(factory, text);
+    Handle<Object> parsedObject = JsonParser<false>::Parse(isolate, rawJson, factory->undefined_value()).ToHandleChecked();
+    SET(object, "inspectorObject", parsedObject);
+    SET(object, "generatorId", NUM(pending.generatorId));
+    SET(object, "asyncExecutionId", NUM(pending.asyncExecutionId));
 
-      Handle<Object> parsedObject = JsonParser<false>::Parse(isolate, rawJson, factory->undefined_value()).ToHandleChecked();
-      SET(object, "inspectorObject", parsedObject);
-      */
-    /*
-    } catch(...) {
-      SET(object, "error", NUM(1));
-    }
-    */
-    
-    //SET(object, "generatorId", NUM(pending.generatorId));
-    //SET(object, "asyncExecutionId", NUM(pending.asyncExecutionId));
+    JSObject::AddDataElement(json_array, i, object, NONE);
+  }
 
-    //JSObject::AddDataElement(json_array, i, object, NONE);
-  //}
-  //*/
-
-  //testNums.push_back(0);
 	return *json_array;
 }
 
@@ -177,11 +133,14 @@ Object* DebugAwaitCheckpoint(Isolate* isolate, int order, Object* generator, JSP
         return nullptr;
       }
     }
-    return THROW("Await resumed that we have no record of waiting.");
+    // We can't throw here, or we break things, and no error messages print.
+    //return THROW("Await resumed that we have no record of waiting.");
+    return nullptr;
   }
   for(int i = 0; i < pendingAwaits.size(); i++) {
     if(pendingAwaits[i].generatorId == generatorId) {
-      return THROW("Awaiting generator twice?");
+      return nullptr;
+      //return THROW("Awaiting generator twice?");
     }
   }
 
@@ -207,7 +166,7 @@ Object* DebugAwaitCheckpoint(Isolate* isolate, int order, Object* generator, JSP
     return THROW("Stack is empty on await?");
   }
   
-  //isolate->pendingAwaits.push_back(AwaitInfo(generatorId, stack, isolate->executionAsyncId));
+  isolate->pendingAwaits.push_back(AwaitInfo(generatorId, stack, isolate->executionAsyncId));
   return nullptr;
 }
 

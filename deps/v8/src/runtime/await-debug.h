@@ -10,7 +10,6 @@ public:
   size_t length = 0;
 
 public:
-  IsolateString(){}
   IsolateString(const v8_inspector::StringView& text);
   // text is always 16 bit, as v8_inspector::protocol::String is just
   IsolateString(const v8_inspector::protocol::String& text): IsolateString(v8_inspector::StringView(text.characters16(), text.length())) { }
